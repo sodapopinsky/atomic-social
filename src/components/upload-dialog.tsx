@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
+import imageCompression from 'browser-image-compression'
 
 export function UploadDialog() {
   const [firstName, setFirstName] = useState('')
@@ -20,66 +21,43 @@ export function UploadDialog() {
   const [isOpen, setIsOpen] = useState(false)
   const { toast } = useToast()
 
-  const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB in bytes
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0]
-    if (selectedFile) {
-      if (selectedFile.size > MAX_FILE_SIZE) {
-        toast({
-          variant: "destructive",
-          title: "File too large",
-          description: "Please select an image under 10MB",
-        })
-        e.target.value = '' // Reset input
-        setFile(null)
-        return
-      }
-      setFile(selectedFile)
+    if (e.target.files?.[0]) {
+      setFile(e.target.files[0])
     }
   }
 
   const isFormValid = firstName.trim() && lastName.trim() && file
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!isFormValid) return
-
+  
     setIsUploading(true)
-
     try {
+      const options = {
+        maxSizeMB: 7, // Adjust max size (in MB) as needed
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+      }
+      const compressedFile = await imageCompression(file!, options)
+      
       const formData = new FormData()
-      formData.append('file', file)
+      formData.append('file', compressedFile)
       formData.append('upload_preset', 'atomic_social')
-
-      // Upload to Cloudinary with timeout
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
-
+  
+      // Upload to Cloudinary
       const uploadResponse = await fetch(
         `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-        {
-          method: 'POST',
-          body: formData,
-          signal: controller.signal
-        }
+        { method: 'POST', body: formData }
       )
-
-      clearTimeout(timeoutId)
-
-      if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json()
-        throw new Error(errorData.message || 'Failed to upload to Cloudinary')
-      }
-
+      
+      if (!uploadResponse.ok) throw new Error('Failed to upload to Cloudinary')
       const uploadResult = await uploadResponse.json()
-
+  
       // Save to our database
       const saveResponse = await fetch('/api/images', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           publicId: uploadResult.public_id,
           url: uploadResult.secure_url,
@@ -87,35 +65,26 @@ export function UploadDialog() {
           lastName,
         }),
       })
-
+  
       if (saveResponse.ok) {
-        setIsOpen(false)  // Close dialog on success
+        setIsOpen(false)
         window.location.reload()
       } else {
         throw new Error('Failed to save to database')
       }
     } catch (error) {
       console.error('Upload failed:', error)
-      let errorMessage = "There was a problem uploading your photo."
-      
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          errorMessage = "Upload timed out. Please try with a smaller image."
-        } else {
-          errorMessage = error.message
-        }
-      }
-
       toast({
         variant: "destructive",
         title: "Upload Failed",
-        description: errorMessage,
+        description: "There was a problem uploading your photo. Please try again.",
       })
     } finally {
       setIsUploading(false)
     }
   }
 
+  // Scroll into view when input is focused
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     setTimeout(() => {
       e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -146,18 +115,13 @@ export function UploadDialog() {
             onFocus={handleFocus}
             disabled={isUploading}
           />
-          <div className="space-y-1">
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="cursor-pointer"
-              disabled={isUploading}
-            />
-            <p className="text-xs text-muted-foreground">
-              Maximum file size: 10MB
-            </p>
-          </div>
+          <Input
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="cursor-pointer"
+            disabled={isUploading}
+          />
           <Button 
             type="submit" 
             className="w-full"
