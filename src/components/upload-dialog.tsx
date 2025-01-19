@@ -10,6 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { useToast } from "@/hooks/use-toast"
 
 export function UploadDialog() {
   const [firstName, setFirstName] = useState('')
@@ -17,10 +18,24 @@ export function UploadDialog() {
   const [file, setFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const { toast } = useToast()
+
+  const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB in bytes
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      setFile(e.target.files[0])
+    const selectedFile = e.target.files?.[0]
+    if (selectedFile) {
+      if (selectedFile.size > MAX_FILE_SIZE) {
+        toast({
+          variant: "destructive",
+          title: "File too large",
+          description: "Please select an image under 10MB",
+        })
+        e.target.value = '' // Reset input
+        setFile(null)
+        return
+      }
+      setFile(selectedFile)
     }
   }
 
@@ -37,14 +52,25 @@ export function UploadDialog() {
       formData.append('file', file)
       formData.append('upload_preset', 'atomic_social')
 
-      // Upload to Cloudinary
+      // Upload to Cloudinary with timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+
       const uploadResponse = await fetch(
         `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
         {
           method: 'POST',
           body: formData,
+          signal: controller.signal
         }
       )
+
+      clearTimeout(timeoutId)
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json()
+        throw new Error(errorData.message || 'Failed to upload to Cloudinary')
+      }
 
       const uploadResult = await uploadResponse.json()
 
@@ -65,13 +91,35 @@ export function UploadDialog() {
       if (saveResponse.ok) {
         setIsOpen(false)  // Close dialog on success
         window.location.reload()
+      } else {
+        throw new Error('Failed to save to database')
       }
     } catch (error) {
       console.error('Upload failed:', error)
-      alert('Upload failed. Please try again.')
+      let errorMessage = "There was a problem uploading your photo."
+      
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMessage = "Upload timed out. Please try with a smaller image."
+        } else {
+          errorMessage = error.message
+        }
+      }
+
+      toast({
+        variant: "destructive",
+        title: "Upload Failed",
+        description: errorMessage,
+      })
     } finally {
       setIsUploading(false)
     }
+  }
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    setTimeout(() => {
+      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 100)
   }
 
   return (
@@ -79,7 +127,7 @@ export function UploadDialog() {
       <DialogTrigger asChild>
         <Button size="lg">Upload Photo</Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Share a Photo</DialogTitle>
         </DialogHeader>
@@ -88,21 +136,28 @@ export function UploadDialog() {
             placeholder="First Name"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
+            onFocus={handleFocus}
             disabled={isUploading}
           />
           <Input
             placeholder="Last Name"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
+            onFocus={handleFocus}
             disabled={isUploading}
           />
-          <Input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="cursor-pointer"
-            disabled={isUploading}
-          />
+          <div className="space-y-1">
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="cursor-pointer"
+              disabled={isUploading}
+            />
+            <p className="text-xs text-muted-foreground">
+              Maximum file size: 10MB
+            </p>
+          </div>
           <Button 
             type="submit" 
             className="w-full"
