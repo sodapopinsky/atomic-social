@@ -18,7 +18,7 @@ export default async function Home() {
           <UploadDialog />
         </div>
         <div className=" text-sm text-muted-foreground bg-muted p-3 rounded-lg mb-6">
-           Photos selected for our Instagram will earn you $15, paid out with payroll. All photos should reflect Atomic Burger's high standards, clean environment, and welcoming atmosphere.
+           Photos selected for our Instagram will earn you $15, paid out with payroll. All photos should reflect Atomic Burger&apos;s high standards, clean environment, and welcoming atmosphere.
         </div>
         
         
