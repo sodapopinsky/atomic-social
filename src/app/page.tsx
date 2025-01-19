@@ -1,27 +1,28 @@
 import { prisma } from '@/lib/db'
-import { CloudinaryImage } from '@/components/cloudinary-image';
+import { UploadDialog } from '@/components/upload-dialog'
+import { ImageGrid } from '@/components/image-grid'
+
 
 export default async function Home() {
-  const users = await prisma.user.findMany({
-    select: {
-      email: true
-    }
+  const images = await prisma.image.findMany({
+    orderBy: {
+      createdAt: 'desc'
+    },
   })
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <div className="space-y-6 text-center">
-        <h1 className="text-4xl font-bold tracking-tight">
-          Hello
-        </h1>
-        <CloudinaryImage />
-        <div className="space-y-2">
-          {users.map((user) => (
-            <p key={user.email} className="text-muted-foreground">
-              {user.email}
-            </p>
-          ))}
+    <main className="min-h-screen p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8 flex justify-between items-center">
+          <h1 className="text-4xl font-bold">Atomic Social</h1>
+          <UploadDialog />
         </div>
+        <div className=" text-sm text-muted-foreground bg-muted p-3 rounded-lg mb-6">
+           Photos selected for our Instagram will earn you $15, paid out with payroll. All photos should reflect Atomic Burger's high standards, clean environment, and welcoming atmosphere.
+        </div>
+        
+        
+        <ImageGrid images={images} />
       </div>
     </main>
   )
