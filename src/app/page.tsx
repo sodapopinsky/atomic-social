@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { prisma } from '@/lib/db'
 import { UploadDialog } from '@/components/upload-dialog'
 import { ImageGrid } from '@/components/image-grid'
