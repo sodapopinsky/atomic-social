@@ -96,11 +96,12 @@ export function UploadDialog() {
       <DialogTrigger asChild>
         <Button size="lg">Upload Photo</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="h-screen max-h-[90%] sm:max-w-[425px] overflow-y-auto p-4">
+      <div className="flex flex-col items-start justify-start h-full">
         <DialogHeader>
           <DialogTitle>Share a Photo</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-5">
           <Input
             placeholder="First Name"
             value={firstName}
@@ -130,6 +131,7 @@ export function UploadDialog() {
             {isUploading ? 'Uploading...' : 'Upload Photo'}
           </Button>
         </form>
+        </div>
       </DialogContent>
     </Dialog>
   )
