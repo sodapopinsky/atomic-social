@@ -3,7 +3,7 @@
 import { CldImage } from 'next-cloudinary'
 import { FaInstagram } from 'react-icons/fa'
 import { BsCheckLg } from 'react-icons/bs'
-import { formatDistanceToNow, format } from 'date-fns'
+import {  format } from 'date-fns'
 
 type Image = {
   id: number
@@ -56,7 +56,7 @@ export function ImageGrid({ images }: { images: Image[] }) {
             
             {/* Second row: Upload date and Post date */}
             <div className="flex justify-between items-center text-xs text-muted-foreground">
-              <span>Uploaded {formatDistanceToNow(new Date(image.createdAt))} ago</span>
+            <span>Uploaded {format(new Date(image.createdAt), 'MMM d, yyyy')}</span>
               {image.postedAt && (
                 <span>Posted {format(new Date(image.postedAt), 'MMM d, yyyy')}</span>
               )}

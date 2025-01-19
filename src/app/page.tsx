@@ -23,11 +23,11 @@ export default async function Home() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 px-4 ">
+      <main className="flex-1 px-4 max-w-6xl mx-auto ">
       <div className="text-sm text-muted-foreground mt-3 mb-4 bg-gray-100 p-4 rounded-md">
             Photos selected for our Instagram will earn you $15, paid out with payroll (current employees only!). All photos should reflect Atomic Burger&apos;s high standards, clean environment, and welcoming atmosphere.
           </div>
-        <div className="max-w-6xl mx-auto">
+        <div>
           <ImageGrid images={images} />
         </div>
       </main>
