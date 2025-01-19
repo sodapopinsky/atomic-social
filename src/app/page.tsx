@@ -1,8 +1,7 @@
 import { prisma } from '@/lib/db'
+import { CloudinaryImage } from '@/components/cloudinary-image';
 
-// Mark component as async since we need to fetch datas
 export default async function Home() {
-  // Fetch users from database
   const users = await prisma.user.findMany({
     select: {
       email: true
@@ -15,6 +14,7 @@ export default async function Home() {
         <h1 className="text-4xl font-bold tracking-tight">
           Hello
         </h1>
+        <CloudinaryImage />
         <div className="space-y-2">
           {users.map((user) => (
             <p key={user.email} className="text-muted-foreground">
