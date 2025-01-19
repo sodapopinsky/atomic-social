@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db'
 
-// Mark component as async since we need to fetch data
+// Mark component as async since we need to fetch datas
 export default async function Home() {
   // Fetch users from database
   const users = await prisma.user.findMany({
